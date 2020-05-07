@@ -10,7 +10,8 @@ namespace Microsoft.Bot.AdaptiveCards
         public static bool IsAdaptiveCardAction(ITurnContext turnContext)
         {
             return turnContext.Activity.Type == ActivityTypes.Invoke &&
-                string.Equals(AdaptiveCardAction.Name, turnContext.Activity.Name);
+                ( string.Equals(AdaptiveCardAction.Name, turnContext.Activity.Name) || 
+                  string.Equals(AdaptiveCardAction.TeamsName, turnContext.Activity.Name)) ;
         }
 
         public static AdaptiveCardInvoke ValidateRequest(ITurnContext turnContext)

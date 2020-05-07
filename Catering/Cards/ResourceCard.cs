@@ -2,16 +2,16 @@
 using AdaptiveCards.Templating;
 using Microsoft.Bot.Schema;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Catering.Cards
 {
     public class CardResource
     {
+        private readonly string TeamsTemplateJsonFileName = "TeamsAdaptiveTemplate.json";
+
         private readonly string _fileName;
         private readonly string _filePath;
 
@@ -23,16 +23,29 @@ namespace Catering.Cards
 
         public string AsJson()
         {
-            return File.ReadAllText(_filePath);
+            return EncodeAdaptiveCardForTeams(File.ReadAllText(_filePath));
         }
 
         public string AsJson<T>(T data)
         {
-            var cardJson = AsJson();
+            var cardJson = File.ReadAllText(_filePath);
             var cardData = JsonConvert.SerializeObject(data);
 
             var transformer = new AdaptiveTransformer();
-            return transformer.Transform(cardJson, cardData);
+            return EncodeAdaptiveCardForTeams(transformer.Transform(cardJson, cardData));
+        }
+
+        private string EncodeAdaptiveCardForTeams(string card)
+        {
+            var teamsJsonTemplatePath = Path.Combine(".", "Resources", TeamsTemplateJsonFileName);
+            var teamsCardJson = File.ReadAllText(teamsJsonTemplatePath);
+
+            var base64Card = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(card));
+            var data = JObject.FromObject(new {
+                encodedAdaptiveCard = base64Card
+            }).ToString();
+
+            return new AdaptiveTransformer().Transform(teamsCardJson, data);
         }
 
         public object AsJObject()

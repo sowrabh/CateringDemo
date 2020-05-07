@@ -20,6 +20,9 @@ using Microsoft.Bot.AdaptiveCards;
 using System.Linq;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Bot.Builder.Dialogs;
+using Microsoft.Bot.Builder.Teams;
+using Microsoft.AspNetCore.Mvc.TagHelpers;
+using Microsoft.Bot.Schema.Teams;
 
 namespace Catering
 {
@@ -34,7 +37,7 @@ namespace Catering
     // class is created. Objects that are expensive to construct, or have a lifetime
     // beyond the single turn, should be carefully managed.
 
-    public class CateringBot<TDialog> : ActivityHandler where TDialog : Dialog
+    public class CateringBot<TDialog> : TeamsActivityHandler where TDialog : Dialog
     {
         private const string WelcomeText = "Welcome to the Adaptive Cards 2.0 Bot. This bot will introduce you to Action.Execute in Adaptive Cards.";
         private BotState _userState;
@@ -78,7 +81,7 @@ namespace Catering
             await _dialog.RunAsync(turnContext, _userState.CreateProperty<DialogState>(nameof(DialogState)), cancellationToken);
         }
 
-        protected override async Task<InvokeResponse> OnInvokeActivityAsync(ITurnContext<IInvokeActivity> turnContext, CancellationToken cancellationToken)
+        protected override async Task<TaskModuleResponse> OnTeamsTaskModuleFetchAsync(ITurnContext<IInvokeActivity> turnContext, TaskModuleRequest taskModuleRequest, CancellationToken cancellationToken)
         {
             if (AdaptiveCardInvokeValidator.IsAdaptiveCardAction(turnContext))
             {
@@ -95,8 +98,8 @@ namespace Catering
 
                         // process action
                         var responseBody = await ProcessOrderAction(user, cardOptions);
-                        
-                        return CreateInvokeResponse(HttpStatusCode.OK, responseBody);
+
+                        return new TaskModuleResponse(CreateTeamsInvokeResponse(responseBody));
                     }
                     else
                     {
@@ -105,7 +108,7 @@ namespace Catering
                 }
                 catch (AdaptiveCardActionException e)
                 {
-                    return CreateInvokeResponse(HttpStatusCode.OK, e.Response);
+                    return new TaskModuleResponse();
                 }
             }
 
@@ -175,6 +178,24 @@ namespace Catering
             {
                 Status = (int)statusCode,
                 Body = body
+            };
+        }
+
+        private static TaskModuleContinueResponse CreateTeamsInvokeResponse(object body = null)
+        {
+            string serializedBody = JsonConvert.SerializeObject(body);
+            string encodedBody = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(serializedBody));
+            return new TaskModuleContinueResponse
+            {
+                Value = new TaskModuleTaskInfo
+                {
+                    Url = "https://dummyurl.com",
+                    FallbackUrl = "https://dummyurl.com",
+                    Height = 600,
+                    Width = 600,
+                    Title = encodedBody,
+                    CompletionBotId = "a6cad722-db53-46c2-87a1-75241639594f",
+                }
             };
         }
 

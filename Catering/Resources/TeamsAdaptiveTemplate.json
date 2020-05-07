@@ -1,0 +1,14 @@
+{
+  "type": "AdaptiveCard",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "This is a dummy adaptive template for Teams",
+      "size": "Medium",
+      "weight": "Bolder"
+    }
+  ],
+  "fallbackText":  "{encodedAdaptiveCard}",
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "version": "1.2"
+}
