@@ -9,7 +9,6 @@ namespace Microsoft.Bot.AdaptiveCards
     public class AdaptiveCardAction
     {
         public const string Name = "adaptiveCard/action";
-        public const string TeamsName = "task/fetch";
 
         [JsonProperty("type")]
         public string Type { get; set; }

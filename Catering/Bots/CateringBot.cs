@@ -37,7 +37,7 @@ namespace Catering
     // class is created. Objects that are expensive to construct, or have a lifetime
     // beyond the single turn, should be carefully managed.
 
-    public class CateringBot<TDialog> : TeamsActivityHandler where TDialog : Dialog
+    public class CateringBot<TDialog> : ActivityHandler where TDialog : Dialog
     {
         private const string WelcomeText = "Welcome to the Adaptive Cards 2.0 Bot. This bot will introduce you to Action.Execute in Adaptive Cards.";
         private BotState _userState;
@@ -81,7 +81,7 @@ namespace Catering
             await _dialog.RunAsync(turnContext, _userState.CreateProperty<DialogState>(nameof(DialogState)), cancellationToken);
         }
 
-        protected override async Task<TaskModuleResponse> OnTeamsTaskModuleFetchAsync(ITurnContext<IInvokeActivity> turnContext, TaskModuleRequest taskModuleRequest, CancellationToken cancellationToken)
+        protected override async Task<InvokeResponse> OnInvokeActivityAsync(ITurnContext<IInvokeActivity> turnContext, CancellationToken cancellationToken)
         {
             if (AdaptiveCardInvokeValidator.IsAdaptiveCardAction(turnContext))
             {
@@ -99,7 +99,7 @@ namespace Catering
                         // process action
                         var responseBody = await ProcessOrderAction(user, cardOptions);
 
-                        return new TaskModuleResponse(CreateTeamsInvokeResponse(responseBody));
+                        return CreateInvokeResponse(responseBody);
                     }
                     else
                     {
@@ -108,7 +108,7 @@ namespace Catering
                 }
                 catch (AdaptiveCardActionException e)
                 {
-                    return new TaskModuleResponse();
+                    return CreateInvokeResponse(HttpStatusCode.OK, e.Response);
                 }
             }
 
