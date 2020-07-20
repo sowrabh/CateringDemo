@@ -11,6 +11,7 @@ using Microsoft.Bot.Schema;
 using AdaptiveCards.Templating;
 using Newtonsoft.Json;
 using Catering.Cards;
+using System.Net.Http;
 using Catering.Models;
 using System.Net;
 using AdaptiveCards;
@@ -23,6 +24,7 @@ using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Teams;
 using Microsoft.AspNetCore.Mvc.TagHelpers;
 using Microsoft.Bot.Schema.Teams;
+using Microsoft.Identity.Client;
 
 namespace Catering
 {
@@ -69,7 +71,8 @@ namespace Catering
         }
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
-            await _dialog.RunAsync(turnContext, _userState.CreateProperty<DialogState>(nameof(DialogState)), cancellationToken);
+            //await _dialog.RunAsync(turnContext, _userState.CreateProperty<DialogState>(nameof(DialogState)), cancellationToken);
+            await SendHttpToTeams(HttpMethod.Post,MessageFactory.Attachment(new CardResource("EntreOptions.json").AsAttachment()), turnContext.Activity.Conversation.Id);
         }
         protected override async Task OnEndOfConversationActivityAsync(ITurnContext<IEndOfConversationActivity> turnContext, CancellationToken cancellationToken)
         {
@@ -281,6 +284,60 @@ namespace Catering
             return CardResponse("Confirmation.json");
         }
 
+        private static async Task<string> GetAccessToken()
+        {
+            var app = ConfidentialClientApplicationBuilder.Create("a6cad722-db53-46c2-87a1-75241639594f")
+                       .WithClientSecret("Y9RY51b4JsLsHsCfaMuFi=LQ]XrWH?Y@")
+                       .WithAuthority(new System.Uri($"{"https://login.microsoftonline.com"}/{"botframework.com"}"))
+                       .Build();
+
+            var authResult = await app.AcquireTokenForClient(new string[] { "https://api.botframework.com/.default" }).ExecuteAsync();
+            return authResult.AccessToken;
+        }
+
+        private async static Task<string> SendHttpToTeams(HttpMethod method, IActivity activity, string convId, string messageId = null)
+        {
+            var token = await GetAccessToken();
+            var requestAsString = JsonConvert.SerializeObject(activity);
+            //var path = $"v3/conversations/{convId}/activities";
+            var headers = new Dictionary<string, string>
+            {
+                { "User-Agent", "UniversalBot" },
+                { "Authorization", $"Bearer {token}" }
+            };
+
+            string requestUri;
+            if (method == HttpMethod.Post)
+            {
+                requestUri = $"https://canary.botapi.skype.com/amer-df/v3/conversations/{convId}/activities";
+            }
+            //requestUri = $"https://smba.trafficmanager.net/amer/v3/conversations/{convId}/activities";
+            else if (method == HttpMethod.Put && messageId != null)
+            {
+                requestUri = $"https://canary.botapi.skype.com/amer-df/v3/conversations/{convId}/activities/{messageId}";
+            }
+            //requestUri = $"https://smba.trafficmanager.net/amer/v3/conversations/{convId}/activities/{messageId}";
+            else
+                return null;
+
+            HttpRequestMessage request = new HttpRequestMessage(method, requestUri);
+
+            if (headers != null)
+            {
+                foreach (KeyValuePair<string, string> entry in headers)
+                {
+                    request.Headers.TryAddWithoutValidation(entry.Key, entry.Value);
+                }
+            }
+
+            request.Content = new StringContent(requestAsString, System.Text.Encoding.UTF8, "application/json");
+
+            HttpClient httpClient = new HttpClient();
+            HttpResponseMessage response = await httpClient.SendAsync(request);
+            var payloadAsString = await response.Content.ReadAsStringAsync();
+            var payload = JsonConvert.DeserializeObject<ResourceResponse>(payloadAsString);
+            return payload.Id;
+        }
         #endregion
     }
 }
