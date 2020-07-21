@@ -6,6 +6,7 @@
     "action": {
       "type": "Action.Execute",
       "verb": "order",
+      "title": "Refresh",
       "data": {
         "nextCardToSend": 3,
         "currentCard": 4,
