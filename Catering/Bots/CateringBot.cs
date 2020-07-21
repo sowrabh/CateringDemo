@@ -72,7 +72,31 @@ namespace Catering
         protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
         {
             //await _dialog.RunAsync(turnContext, _userState.CreateProperty<DialogState>(nameof(DialogState)), cancellationToken);
-            await SendHttpToTeams(HttpMethod.Post,MessageFactory.Attachment(new CardResource("EntreOptions.json").AsAttachment()), turnContext.Activity.Conversation.Id);
+            var text = turnContext.Activity.Text.ToLowerInvariant();
+            if (text.Contains("recent"))
+            {
+
+                var latestOrders = await _cateringDb.GetRecentOrdersAsync();
+                var users = latestOrders.Items;
+                await SendHttpToTeams(HttpMethod.Post, MessageFactory.Attachment(new CardResource("RecentOrders.json").AsAttachment(
+                            new
+                            {
+                                users = users.Select(u => new
+                                {
+                                    lunch = new
+                                    {
+                                        entre = u.Lunch.Entre,
+                                        drink = u.Lunch.Drink,
+                                        orderTimestamp = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(u.Lunch.OrderTimestamp, "Pacific Standard Time").ToString("g")
+                                    }
+                                }).ToList()
+                            })), turnContext.Activity.Conversation.Id);
+
+            }
+            else
+            {
+                await SendHttpToTeams(HttpMethod.Post, MessageFactory.Attachment(new CardResource("EntreOptions.json").AsAttachment()), turnContext.Activity.Conversation.Id);
+            }
         }
         protected override async Task OnEndOfConversationActivityAsync(ITurnContext<IEndOfConversationActivity> turnContext, CancellationToken cancellationToken)
         {
