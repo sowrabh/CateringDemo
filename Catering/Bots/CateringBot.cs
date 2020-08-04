@@ -331,19 +331,9 @@ namespace Catering
             };
 
             string requestUri;
-            if (method == HttpMethod.Post)
-            {
-                requestUri = $"https://canary.botapi.skype.com/amer-df/v3/conversations/{convId}/activities";
-            }
-            //requestUri = $"https://smba.trafficmanager.net/amer/v3/conversations/{convId}/activities";
-            else if (method == HttpMethod.Put && messageId != null)
-            {
-                requestUri = $"https://canary.botapi.skype.com/amer-df/v3/conversations/{convId}/activities/{messageId}";
-            }
-            //requestUri = $"https://smba.trafficmanager.net/amer/v3/conversations/{convId}/activities/{messageId}";
-            else
-                return null;
-
+            //requestUri = $"https://canary.botapi.skype.com/amer-df/v3/conversations/{convId}/activities";
+            requestUri = $"https://smba.trafficmanager.net/amer/v3/conversations/{convId}/activities";
+            
             HttpRequestMessage request = new HttpRequestMessage(method, requestUri);
 
             if (headers != null)
