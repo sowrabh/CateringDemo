@@ -98,8 +98,8 @@ namespace Catering.Dialogs
                         {
                             lunch = new
                             {
-                                entre = u.Lunch.Entre,
-                                drink = u.Lunch.Drink,
+                                entre = String.IsNullOrEmpty(u.Lunch.Entre)? "N/A" : u.Lunch.Entre,
+                                drink = String.IsNullOrEmpty(u.Lunch.Drink)? "N/A" : u.Lunch.Drink,
                                 orderTimestamp = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(u.Lunch.OrderTimestamp, "Pacific Standard Time").ToString("g")
                             }
                         }).ToList()
